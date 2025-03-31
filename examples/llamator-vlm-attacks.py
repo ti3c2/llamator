@@ -5,9 +5,10 @@ from dotenv import load_dotenv
 import llamator
 from llamator.attacks.vlm_m_attack import TestVlmMAttack
 from llamator.attacks.vlm_text_hallucination import TestVlmTextHallucination
+from llamator.attacks.vlm_lowres_docs import TestVlmLowresPdf
 from llamator.client.specific_chat_clients import ClientOpenAI
 
-load_dotenv(".env")  # example of environment variables in the .env.example file
+load_dotenv(".env")
 
 
 client_tested = ClientOpenAI(
@@ -47,7 +48,8 @@ tests_with_attempts = [
 
 custom_tests_with_attempts = [
     # (TestVlmTextHallucination, 3),
-    (TestVlmMAttack, 10),
+    # (TestVlmMAttack, 10),
+    (TestVlmLowresPdf, 10),
 ]
 
 config = {
@@ -67,4 +69,3 @@ llamator.start_testing(
     multistage_depth=3,
     num_threads=3,
 )
-
