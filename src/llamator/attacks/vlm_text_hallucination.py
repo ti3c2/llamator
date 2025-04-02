@@ -89,7 +89,7 @@ class TestVlmTextHallucination(TestBase):
         """
         Loads the attack data for the specified attack type.
         Args:
-            attack_type (AVAILABLE_TEXT_HALLUCINATION_ATTACKS): The type of attack to load data for.
+            attack_types [AVAILABLE_TEXT_HALLUCINATION_ATTACKS]: The types of attacks to load data for.
         Returns:
             pd.DataFrame: A DataFrame containing the attack data.
         """
