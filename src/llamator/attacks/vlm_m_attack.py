@@ -21,7 +21,7 @@ class TestVlmMAttack(TestBase):
     Test class for VLM M-Attack, which adds noise to the image to make VLM see it as a different image.
     The attack originates from this research: https://github.com/VILA-Lab/M-Attack
     It uses the dataset provided in the original research: https://huggingface.co/datasets/MBZUAI-LLM/M-Attack_AdvSamples
-    The dataset-variations correspond to different strengths of
+    The dataset-variations correspond to different strengths of noise applied to the image.
     """
 
     test_name = "test_vlm_m_attack"
