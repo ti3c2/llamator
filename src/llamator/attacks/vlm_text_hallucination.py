@@ -36,7 +36,7 @@ AVAILABLE_TEXT_HALLUCINATION_ATTACKS = Literal["objects", "instructions"]
 class TestVlmTextHallucination(TestBase):
     """
     Test class for VLM text hallucination attacks.
-    The idea is to give model and image which contains only text and as it to describe it.
+    The idea is to give model and image which contains only text and ask it to describe it.
     The goal is to see whether model will describe text or hallucinate with the description of an object written in text.
     """
 
