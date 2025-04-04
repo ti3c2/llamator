@@ -2,8 +2,11 @@ import logging
 import os
 from pathlib import Path
 from typing import Generator, Optional
+import zipfile
 
 import pandas as pd
+
+from vlm_attack_data_load import VLM_ATTACK_TYPES, GoogleDemoDataDownloader
 
 from ..attack_provider.image_utils import create_vision_messages, imgpath2base64
 from ..attack_provider.test_base import StatusUpdate, TestBase
@@ -73,12 +76,53 @@ class TestVlmLowresPdf(TestBase):
             df.to_csv(csv_path, index=False)
             logging.info(f"{self.test_description} attack report saved to {csv_path}")
 
+    def download_data(self, data_path: str) -> None:
+        os.makedirs(data_path, exist_ok=True)
+
+        logger.info("Downloading dataset from Google Drive...")
+        downloader = GoogleDemoDataDownloader(attack_type=VLM_ATTACK_TYPES.LOWRES_DOCS_ATTACK)
+        archive_path = os.path.join(data_path, "..", downloader.demo_file_name())
+        
+        downloader.download_file_from_google_drive(dest_path = archive_path, 
+                                                file_id=downloader.demo_folder_id())
+
+        logger.info(f"Downloaded archive size: {os.path.getsize(archive_path) / 1024:.2f} KB")
+
+        if archive_path.endswith(".zip"):
+            with zipfile.ZipFile(archive_path, "r") as zip_ref:
+                zip_ref.extractall(data_path)
+        else:
+            raise NotImplementedError("Unsupported archive format")
+
+        try:
+            os.remove(archive_path)
+            logger.info(f"Removed archive: {archive_path}")
+        except Exception as ex:
+            logger.warning(f"Could not remove archive: {ex}")
+        logger.info(f"Downloaded and extracted dataset to {data_path}")
+
+
     def _load_attack_data(self) -> pd.DataFrame:
         # TODO: create images if they are not available
         data_path = Path(__file__).parents[1] / "attack_data/lowres_docs/images"
         if not data_path.exists():
-            raise ValueError(f"Data path {data_path} does not exist.")
+            _temp_path = Path(__file__).parents[1] / "attack_data/"
+            try:
+                logger.warning("No data found for attack, downloading...")
+                logger.debug(f"Save dataset into: {_temp_path}")
+                self.download_data(
+                    data_path=str(_temp_path)
+                )
+                logger.info("Done.")
+            except Exception as ex:
+                logger.error(f"Unable to download data: {ex}")
+                raise ValueError(f"Data path {data_path} does not exist.")
 
+        logger.debug(f"Looking for images in: {data_path}")
+        if not data_path.exists():
+            raise FileNotFoundError(f"Expected folder not found: {data_path}")
+        logger.debug(f"Found.")
+        
         data = []
         for file in data_path.rglob("*.png"):
             image_encoded = imgpath2base64(file)
