@@ -11,7 +11,10 @@ from llamator.client.specific_chat_clients import ClientOpenAI
 load_dotenv(".env")
 
 
+base_url_tested = "https://api.openai.com/v1/"
 base_url_tested = "http://localhost:7113/v1"
+
+model_tested = "gpt-4o"
 model_tested = "llava-hf/llava-v1.6-mistral-7b-hf"
 model_tested = "OpenGVLab/InternVL2_5-8B-MPO"
 model_tested = "unsloth/Llama-3.2-11B-Vision-Instruct"
