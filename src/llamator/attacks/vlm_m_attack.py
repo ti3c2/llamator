@@ -2,18 +2,21 @@ import logging
 import os
 from pathlib import Path
 from typing import Generator, List, Literal, Optional
+import base64
 
 import pandas as pd
 
-from ..attack_provider.image_utils import create_vision_messages, imgpath2base64
+from ..attack_provider.image_utils import create_vision_messages
 from ..attack_provider.test_base import StatusUpdate, TestBase
+from ..attacks.vlm_m_attack_data_download import MAttackDataPreparator 
+
 from ..client.attack_config import AttackConfig
 from ..client.client_config import ClientConfig
 
 logger = logging.getLogger(__name__)
 
-
 AVAILABLE_DATASET_VARIATIONS = Literal["4", "8", "16"]
+
 
 
 class TestVlmMAttack(TestBase):
@@ -60,51 +63,73 @@ class TestVlmMAttack(TestBase):
             df.to_csv(csv_path, index=False)
             logging.info(f"{self.test_description} attack report saved to {csv_path}")
 
+    
     def _load_attack_data(self, dataset: str, dataset_variations: List[AVAILABLE_DATASET_VARIATIONS]) -> pd.DataFrame:
-        # dataset = self.dataset
-        # dataset_variations = self.dataset_variations
-        # dataset_variations = ["16"]  # FIXME: ideally this should be passed as parameter
-
-        # TODO: downloaf images if the dataset is not available
-        m_attack_data_path = Path(__file__).parents[1] / "attack_data/M-Attack-VLM"
+        base_dir = Path(__file__).parents[1]
+        m_attack_data_path = base_dir / "attack_data" / "M-Attack-VLM"
         input_data_path = m_attack_data_path / dataset
 
+        # download if no file found
+        missing = [str(input_data_path / v) for v in dataset_variations if not (input_data_path / v).exists()]
+        if missing:
+            logger.warning(f"[WARN] Missing variations found: {missing}")
+            logger.info(f"[INFO] Triggering M-Attack data download...")
+            prep = MAttackDataPreparator(base_path=m_attack_data_path, dataset=dataset)
+            prep.prepare(variations=dataset_variations)
+
+        # load targets
         target_data_path = m_attack_data_path / "target" / dataset
-        target_data_keywords_path = target_data_path / "keywords.json"
-        target_data_captions_path = target_data_path / "caption.json"
-
-        df_keywords = pd.read_json(target_data_keywords_path)
-        df_captions = pd.read_json(target_data_captions_path)
+        df_keywords = pd.read_json(target_data_path / "keywords.json")
+        df_captions = pd.read_json(target_data_path / "caption.json")
         df_target = df_keywords.merge(df_captions, on="image")
-
-        # NOTE: use image id instead of filename because targets are jpg and inputs are png
-        df_target["image_id"] = df_target["image"].apply(lambda x: Path(x).stem)
+        df_target["image_id"] = df_target["image"].apply(lambda x: int(Path(x).stem))
+        df_target["norm_image_id"] = df_target["image_id"] % 100
 
         data = []
         for dataset_variation in dataset_variations:
             attack_data_path = input_data_path / dataset_variation
-            if not input_data_path.exists():
-                raise ValueError(f"Data path {input_data_path} does not exist.")
+            if not attack_data_path.exists():
+                logger.warning(f"[WARN] Skipping {attack_data_path} — folder does not exist.")
+                continue
 
-            for file in attack_data_path.rglob("*.png"):
-                image_encoded = imgpath2base64(file)
-                data.append(
-                    dict(
-                        image_path=str(file.relative_to(m_attack_data_path.parent)),
-                        image_id=file.stem,
-                        dataset_variation=dataset_variation,
-                        image_encoded=image_encoded,
+            files = list(attack_data_path.glob("*.png"))
+            if not files:
+                logger.warning(f"[WARN] No PNGs found in {attack_data_path}")
+                continue
+
+            logger.info(f"[INFO] Processing {len(files)} files from {attack_data_path}")
+            for file in files:
+                try:
+                    with open(file, "rb") as image_file:
+                        image_encoded = base64.b64encode(image_file.read()).decode("utf-8")
+
+                    image_id = int(file.stem)
+                    data.append(
+                        dict(
+                            image_path=str(file.relative_to(m_attack_data_path.parent)),
+                            image_id=image_id,
+                            norm_image_id=image_id % 100,
+                            dataset_variation=dataset_variation,
+                            image_encoded=image_encoded,
+                        )
                     )
-                )
+                except Exception as e:
+                    logger.error(f"[ERROR] Failed to encode {file.name}: {e}")
+
+        if not data:
+            raise RuntimeError("No image data collected — check folder structure and file presence.")
 
         df_data = pd.DataFrame(data)
-        df_attack = df_target.merge(df_data, on="image_id")
 
-        # Sort similar classes
+        df_attack = df_data.merge(df_target.drop(columns=["image_id"]), on="norm_image_id", how="left")
+
         df_attack["image_id"] = df_attack["image_id"].astype(int)
-        df_attack = df_attack.sort_values(["image_id", "dataset_variation"])
+        df_attack["norm_image_id"] = df_attack["norm_image_id"].astype(int)
+        df_attack = df_attack.sort_values(["norm_image_id", "image_id", "dataset_variation"])
 
+        logger.info(f"[INFO] Final dataset: {len(df_attack)} matched samples.")
         return df_attack
+
 
     def run(self) -> Generator[StatusUpdate, None, None]:
         df_attack = self._load_attack_data(self.dataset, self.dataset_variations).head(self.num_attempts)
