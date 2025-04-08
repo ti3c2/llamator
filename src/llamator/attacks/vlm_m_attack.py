@@ -2,13 +2,11 @@ import logging
 import os
 from pathlib import Path
 from typing import Generator, List, Literal, Optional
-import base64
 
 import pandas as pd
 
 from ..attack_provider.image_utils import create_vision_messages, imgpath2base64
 from ..attack_provider.test_base import StatusUpdate, TestBase
-from ..attacks.vlm_m_attack_data_download import MAttackDataPreparator 
 
 from ..client.attack_config import AttackConfig
 from ..client.client_config import ClientConfig
@@ -73,9 +71,7 @@ class TestVlmMAttack(TestBase):
         missing = [str(input_data_path / v) for v in dataset_variations if not (input_data_path / v).exists()]
         if missing:
             logger.warning(f"[WARN] Missing variations found: {missing}")
-            logger.info(f"[INFO] Triggering M-Attack data download...")
-            prep = MAttackDataPreparator(base_path=m_attack_data_path, dataset=dataset)
-            prep.prepare(variations=dataset_variations)
+            raise Exception("No data found, download manually through jupyter in llamator/attack_data/M-Attack-VLM")
 
         # load targets
         target_data_path = m_attack_data_path / "target" / dataset
