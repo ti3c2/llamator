@@ -6,7 +6,7 @@ import base64
 
 import pandas as pd
 
-from ..attack_provider.image_utils import create_vision_messages
+from ..attack_provider.image_utils import create_vision_messages, imgpath2base64
 from ..attack_provider.test_base import StatusUpdate, TestBase
 from ..attacks.vlm_m_attack_data_download import MAttackDataPreparator 
 
@@ -82,8 +82,8 @@ class TestVlmMAttack(TestBase):
         df_keywords = pd.read_json(target_data_path / "keywords.json")
         df_captions = pd.read_json(target_data_path / "caption.json")
         df_target = df_keywords.merge(df_captions, on="image")
+        
         df_target["image_id"] = df_target["image"].apply(lambda x: int(Path(x).stem))
-        df_target["norm_image_id"] = df_target["image_id"] % 100
 
         data = []
         for dataset_variation in dataset_variations:
@@ -100,15 +100,12 @@ class TestVlmMAttack(TestBase):
             logger.info(f"[INFO] Processing {len(files)} files from {attack_data_path}")
             for file in files:
                 try:
-                    with open(file, "rb") as image_file:
-                        image_encoded = base64.b64encode(image_file.read()).decode("utf-8")
-
+                    image_encoded = imgpath2base64(file)
                     image_id = int(file.stem)
                     data.append(
                         dict(
                             image_path=str(file.relative_to(m_attack_data_path.parent)),
                             image_id=image_id,
-                            norm_image_id=image_id % 100,
                             dataset_variation=dataset_variation,
                             image_encoded=image_encoded,
                         )
@@ -120,15 +117,18 @@ class TestVlmMAttack(TestBase):
             raise RuntimeError("No image data collected — check folder structure and file presence.")
 
         df_data = pd.DataFrame(data)
-
-        df_attack = df_data.merge(df_target.drop(columns=["image_id"]), on="norm_image_id", how="left")
+        
+        df_data["image_id"] = df_data["image_id"].astype(int)
+        df_target["image_id"] = df_target["image_id"].astype(int)
+        
+        df_attack = df_data.merge(
+            df_target, on="image_id", how="left")
 
         df_attack["image_id"] = df_attack["image_id"].astype(int)
-        df_attack["norm_image_id"] = df_attack["norm_image_id"].astype(int)
-        df_attack = df_attack.sort_values(["norm_image_id", "image_id", "dataset_variation"])
-
+        df_attack = df_attack.sort_values(["image_id", "dataset_variation"])
+        
         logger.info(f"[INFO] Final dataset: {len(df_attack)} matched samples.")
-        return df_attack
+        return df_attack.reset_index(drop=True)
 
 
     def run(self) -> Generator[StatusUpdate, None, None]:

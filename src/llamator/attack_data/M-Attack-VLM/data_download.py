@@ -46,27 +46,23 @@ class MAttackDataPreparator:
         dataset = load_dataset("MBZUAI-LLM/M-Attack_AdvSamples", split="train")
         os.makedirs(self.dataset_path, exist_ok=True)
 
-        epsilon_map = {
-            "4": set(range(0, 100)),
-            "8": set(range(100, 200)),
-            "16": set(range(200, 300)),
-        }
         variation_set = set(variations)
         counter = 0
 
         for item in dataset:
             epsilon = str(item["epsilon"])
-            image_id = int(item["image_id"])
+            image_path = str(
+                os.path.join(*(item["image"].filename).split(os.sep)[-2:])
+            )
+            
             if epsilon not in variation_set:
                 continue
-            if image_id not in epsilon_map[epsilon]:
-                continue
-
+            
             image = item["image"]
             variation_dir = self.dataset_path / epsilon
             variation_dir.mkdir(parents=True, exist_ok=True)
 
-            save_path = variation_dir / f"{image_id}.png"
+            save_path = self.dataset_path / f"{image_path}"
             image.save(save_path)
             counter += 1
 
