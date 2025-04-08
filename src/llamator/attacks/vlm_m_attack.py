@@ -71,7 +71,7 @@ class TestVlmMAttack(TestBase):
         missing = [str(input_data_path / v) for v in dataset_variations if not (input_data_path / v).exists()]
         if missing:
             logger.warning(f"[WARN] Missing variations found: {missing}")
-            raise Exception("No data found, download manually through jupyter in llamator/attack_data/M-Attack-VLM")
+            raise Exception("No data found, download manually with jupyter under llamator/attack_data/M-Attack-VLM destination.")
 
         # load targets
         target_data_path = m_attack_data_path / "target" / dataset
