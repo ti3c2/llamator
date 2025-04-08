@@ -1,24 +1,22 @@
+import logging
 import os
 import shutil
 import subprocess
-import requests
-import logging
-from datasets import load_dataset
 from pathlib import Path
-from PIL import Image
-from typing import List, Literal
+from typing import List
+
+import requests
+from datasets import load_dataset
 
 logger = logging.getLogger(__name__)
 
 URL = "https://drive.google.com/file/d//view?usp=share_link"
 
 
-
 class MAttackDataPreparator:
-    def __init__(self,
-                 base_path: str = "attack_data/M-Attack-VLM",
-                 dataset: str = "bigscale_100",
-                 target_subfolder: str = "1"):
+    def __init__(
+        self, base_path: str = "attack_data/M-Attack-VLM", dataset: str = "bigscale_100", target_subfolder: str = "1"
+    ):
         self.base_path = Path(base_path)
         self.dataset = dataset
         self.dataset_path = self.base_path / dataset
@@ -30,7 +28,7 @@ class MAttackDataPreparator:
         # self.gdrive_file_id = ""
         # self.gdrive_zip_path = Path(base_path) /"xxx"
 
-    def prepare(self, variations = ["4", "8", "16"], limit: int = -1):
+    def prepare(self, variations=["4", "8", "16"], limit: int = -1):
         self._download_images(variations, limit)
         try:
             self._download_from_github()
@@ -39,7 +37,6 @@ class MAttackDataPreparator:
             logger.info("Falling back to Google Drive.")
             # self._download_from_google_drive()
             logger.error(f"Can't download from google this time, consider downloading manually.")
-
 
     def _download_images(self, variations: List[str], limit: int):
         logger.info("Downloading images from Hugging Face...")
@@ -51,13 +48,11 @@ class MAttackDataPreparator:
 
         for item in dataset:
             epsilon = str(item["epsilon"])
-            image_path = str(
-                os.path.join(*(item["image"].filename).split(os.sep)[-2:])
-            )
-            
+            image_path = str(os.path.join(*(item["image"].filename).split(os.sep)[-2:]))
+
             if epsilon not in variation_set:
                 continue
-            
+
             image = item["image"]
             variation_dir = self.dataset_path / epsilon
             variation_dir.mkdir(parents=True, exist_ok=True)
@@ -70,7 +65,6 @@ class MAttackDataPreparator:
                 break
 
         logger.info(f"Saved {counter} images.")
-
 
     def _download_from_github(self):
         logger.info("Attempting to download target files from GitHub...")
@@ -89,7 +83,6 @@ class MAttackDataPreparator:
         shutil.rmtree(self.clone_path)
         logger.info("GitHub clone cleaned up.")
 
-
     def _download_from_google_drive(self):
         os.makedirs(os.path.dirname(self.gdrive_zip_path), exist_ok=True)
         if not os.path.exists(self.gdrive_zip_path):
@@ -98,14 +91,13 @@ class MAttackDataPreparator:
         shutil.unpack_archive(self.gdrive_zip_path, self.base_path.parent)
         logger.info(f"Extracted fallback ZIP to {self.base_path.parent}")
 
-
     def _download_file_from_google_drive(self, dest_path: str, file_id: str):
         session = requests.Session()
-        response = session.get(URL, params={'id': file_id}, stream=True)
+        response = session.get(URL, params={"id": file_id}, stream=True)
         token = self._get_confirm_token(response)
 
         if token:
-            params = {'id': file_id, 'confirm': token}
+            params = {"id": file_id, "confirm": token}
             response = session.get(URL, params=params, stream=True)
 
         with open(dest_path, "wb") as f:
@@ -113,9 +105,8 @@ class MAttackDataPreparator:
                 if chunk:
                     f.write(chunk)
 
-
     def _get_confirm_token(self, response):
         for key, value in response.cookies.items():
-            if key.startswith('download_warning'):
+            if key.startswith("download_warning"):
                 return value
         return None
