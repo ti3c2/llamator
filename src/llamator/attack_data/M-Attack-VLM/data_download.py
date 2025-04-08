@@ -10,8 +10,6 @@ from datasets import load_dataset
 
 logger = logging.getLogger(__name__)
 
-URL = "https://drive.google.com/file/d//view?usp=share_link"
-
 
 class MAttackDataPreparator:
     def __init__(
@@ -24,6 +22,8 @@ class MAttackDataPreparator:
 
         self.github_repo = "https://github.com/VILA-Lab/M-Attack.git"
         self.clone_path = Path(base_path) / "test_repo"
+
+        self.google_url = "https://drive.google.com/file/d//view?usp=share_link"
 
         # self.gdrive_file_id = ""
         # self.gdrive_zip_path = Path(base_path) /"xxx"
@@ -93,12 +93,12 @@ class MAttackDataPreparator:
 
     def _download_file_from_google_drive(self, dest_path: str, file_id: str):
         session = requests.Session()
-        response = session.get(URL, params={"id": file_id}, stream=True)
+        response = session.get(self.google_url, params={"id": file_id}, stream=True)
         token = self._get_confirm_token(response)
 
         if token:
             params = {"id": file_id, "confirm": token}
-            response = session.get(URL, params=params, stream=True)
+            response = session.get(self.google_url, params=params, stream=True)
 
         with open(dest_path, "wb") as f:
             for chunk in response.iter_content(32768):
