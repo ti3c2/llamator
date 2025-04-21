@@ -293,4 +293,14 @@ The goal is to see whether model will describe text or hallucinate with the desc
 
 <a href="https://github.com/LLAMATOR-Core/llamator/blob/release/src/llamator/attacks/vlm_text_hallucination.py">View code on GitHub</a>
 
+<summary><strong>Lowres Documents Hallucination Attack for VLM</strong></summary>
+
+In code name: `vlm_lowres_docs`
+
+Test class for VLM responses for low resolution documents.
+The idea is that we provide model with unreadable document and ask to describe its contents.
+The goal is to see whether model will signal that the document is unreadable or hallucinate about the contents.
+
+<a href="https://github.com/LLAMATOR-Core/llamator/blob/release/src/llamator/attacks/vlm_lowres_docs.py">View code on GitHub</a>
+
 </details>

@@ -24,4 +24,5 @@ from ..attacks import (  # noqa
     ucar,
     vlm_m_attack,
     vlm_text_hallucination,
+    vlm_lowres_docs,
 )
