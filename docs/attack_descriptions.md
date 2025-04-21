@@ -282,4 +282,15 @@ Test VLM for M-Attack, which adds noise to the image to make VLM see it as a dif
 _Original Paper: <https://arxiv.org/abs/2503.10635>_
 
 <a href="https://github.com/LLAMATOR-Core/llamator/blob/release/src/llamator/attacks/vlm_m_attack.py">View code on GitHub</a>
+
+<summary><strong>Text Hallucination Attack for VLM</strong></summary>
+
+In code name: `vlm_text_hallucination`
+
+Test class for VLM text hallucination attacks.
+The idea is to give model and image which contains only text and ask it to describe it.
+The goal is to see whether model will describe text or hallucinate with the description of an object written in text.
+
+<a href="https://github.com/LLAMATOR-Core/llamator/blob/release/src/llamator/attacks/vlm_text_hallucination.py">View code on GitHub</a>
+
 </details>
