@@ -123,17 +123,21 @@ class TestVlmLowresPdf(TestBase):
                 repo_type="dataset",
                 local_dir=self.data_path,
                 local_dir_use_symlinks=False,
-                ignore_patterns=[".gitattributes"],
+                ignore_patterns=["*.png", ".gitattributes"],
             )
         except Exception as e:
             logger.error(f"Failed to download dataset from HuggingFace: {e}")
 
     def _load_attack_data(self) -> pd.DataFrame:
-        if not self.data_path.exists():
-            logger.warning(f"Data path {self.data_path} does not exist")
-            self._load_huggingface()
 
-        if not self.rescale_data_path.exists():
+        need_create_images = not any(self.rescale_data_path.glob("*.png"))
+        need_download_pdfs = not any(self.data_path.rglob("*.pdf"))
+
+        if need_create_images:
+            logger.info(f"No rescaled images found in {self.rescale_data_path}, generating them...")
+            if need_download_pdfs:
+                logger.warning(f"No PDFs found in {self.data_path}, downloading from HuggingFace...")
+                self._load_huggingface()
             self._create_images()
 
         data = []

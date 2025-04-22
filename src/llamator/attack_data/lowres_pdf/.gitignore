@@ -1,2 +1,3 @@
-images/
-pdf/
+!*.pdf
+*.png
+images
