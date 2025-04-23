@@ -69,7 +69,7 @@ class TestVlmLowresPdf(TestBase):
         artifacts_path: Optional[str] = None,
         rescale: float = 0.25,
         num_attempts: int = 0,
-        is_long_pdf : bool = False,
+        is_long_pdf: bool = False,
         custom_pdf_dir: Optional[Path] = None,
         overwrite_existing_pdfs: bool = False,
         *args,
@@ -94,7 +94,6 @@ class TestVlmLowresPdf(TestBase):
         self.pdf_dir = self.data_path / "pdf"
 
         self.rescale_data_path = self.data_path / "images" / f"rescale__{self.rescale}".replace(".", "_")
-
 
     def _prepare_attack_artifacts(
         self, attack_prompts: list[str], responses: list[str], statuses: list[str], **kwargs
@@ -150,7 +149,7 @@ class TestVlmLowresPdf(TestBase):
             if self.overwrite_existing_pdfs:
                 for f in self.pdf_dir.glob("*.pdf"):
                     f.unlink()
-                
+
                 for f in self.rescale_data_path.glob("*.png"):
                     f.unlink()
             copied = 0
@@ -159,7 +158,7 @@ class TestVlmLowresPdf(TestBase):
                 copied += 1
             logger.info(f"Copied {copied} custom PDFs to {self.pdf_dir}")
 
-            logger.info(f"Preparing images...")
+            logger.info("Preparing images...")
             self._create_images()
         else:
             need_download_pdfs = (not is_there_pdf) and (not is_there_png)
@@ -170,20 +169,20 @@ class TestVlmLowresPdf(TestBase):
                 is_there_pdf = any(self.pdf_dir.glob("*.pdf"))  # re-check
 
             if (not is_there_png) and is_there_pdf:
-                logger.info(f"No rescaled images found, generating them...")
+                logger.info("No rescaled images found, generating them...")
                 self._create_images()
 
         data = []
         for file in self.rescale_data_path.glob("*.png"):
             image_encoded = imgpath2base64(file)
             data.append(
-            dict(
-                image_path=str(file.relative_to(self.data_path)),
-                ground_truth=self.ground_truth_template,
-                image_encoded=image_encoded,
-            ))
+                dict(
+                    image_path=str(file.relative_to(self.data_path)),
+                    ground_truth=self.ground_truth_template,
+                    image_encoded=image_encoded,
+                )
+            )
         return pd.DataFrame(data)
-
 
     def run(self) -> Generator[StatusUpdate, None, None]:
         df_attack = self._load_attack_data().head(self.num_attempts)
