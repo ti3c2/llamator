@@ -28,7 +28,7 @@ client_tested = ClientOpenAI(
 client_judge = llamator.ClientOpenAI(  # LLM for judging
     api_key=os.environ["OPENAI_API_KEY"],
     base_url="https://api.openai.com/v1/",
-    model="gpt-4o",
+    model="gpt-4o-mini",
     temperature=0.8,
     system_prompts=[],
 )
@@ -59,9 +59,9 @@ messages_test_vision = [
 # exit()
 
 test_params = [
-    # ("vlm_m_attack", {"num_attempts": 3, "attack_source": "huggingface"}),
+    ("vlm_m_attack", {"num_attempts": 3, "attack_source": "huggingface"}),
     # ("vlm_text_hallucination", {"num_attempts": 3}),
-    ("vlm_lowres_docs", {"num_attempts": 3}),
+    # ("vlm_lowres_docs", {"num_attempts": 3}),
     # ("system_prompt_leakage", {"num_attempts": 2, "multistage_depth": 3}),
 ]
 
